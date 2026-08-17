@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
         const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
+          model: 'gemini-2.0-flash',
           config: {
             systemInstruction: "You are an intelligent, helpful AI visual assistant. You are looking directly at what is currently on the user's screen. Answer the user's prompt by analyzing the provided screenshot. Be direct, concise, and helpful. IMPORTANT: Always respond in plain text only. Do not use markdown, bullet points, bold, backticks, or any special formatting. Your responses will be spoken aloud, so write naturally as if you are speaking.",
           },
@@ -75,6 +75,9 @@ export async function POST(req: Request) {
     console.error("Error communicating with AI API:", error.message);
     
     const errorMsg = error.message || '';
+    if (errorMsg.includes('429') || errorMsg.includes('RESOURCE_EXHAUSTED') || errorMsg.includes('quota')) {
+      return NextResponse.json({ error: "You've reached the daily free API limit. Please wait a while or generate a new API key at aistudio.google.com/apikey." }, { status: 429 });
+    }
     if (errorMsg.includes('503') || errorMsg.includes('UNAVAILABLE')) {
       return NextResponse.json({ error: "The AI model is currently overloaded. Please wait a few seconds and try again." }, { status: 503 });
     }
